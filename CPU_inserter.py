@@ -5,6 +5,7 @@ import itertools
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.core.utils import ChromeType
+from time import sleep
 
 def connectToDB():
     config = cf.ConfigParser()
@@ -38,14 +39,19 @@ options.binary_location = r'C:\Program Files (x86)\BraveSoftware\Brave-Browser\A
 driver = webdriver.Chrome(ChromeDriverManager(chrome_type=ChromeType.BRAVE).install(), options=options)
 
 # Open a website
-driver.get('https://www.example.com')
+driver.get('https://www.techpowerup.com/cpu-specs/')
+#wait = driver.WebDriverWait(driver, 10)
 
-# Find all <p> elements
-p_elements = driver.find_elements_by_tag_name('p')
 
-# Print the text of each <p> element
-print('All <p> tags:')
-for element in p_elements:
+search_bar = driver.find_element_by_id("quicksearch")
+search_bar.send_keys("Core")
+
+# Find all <tr> elements
+td_elements = driver.find_elements_by_tag_name('td')
+
+# Print the text of each <tr> element
+print('All <td> tags:')
+for element in td_elements:
     print(element.text)
 # Quit the browser
 driver.quit()
