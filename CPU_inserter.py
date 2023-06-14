@@ -44,15 +44,17 @@ driver.get('https://www.techpowerup.com/cpu-specs/')
 
 
 search_bar = driver.find_element_by_id("quicksearch")
-search_bar.send_keys("Core")
+search_bar.send_keys("Core i7-13700TE")
+sleep(5)
 
 # Find all <tr> elements
-td_elements = driver.find_elements_by_tag_name('td')
+td_elements = driver.find_elements_by_tag_name('tr')
 
 # Print the text of each <tr> element
 print('All <td> tags:')
 for element in td_elements:
     print(element.text)
+    
 # Quit the browser
 driver.quit()
 
