@@ -29,8 +29,9 @@ def connectToDB():
 
     return conn.cursor()
 
+#function that will take two strings and compare them. the first arg is what is being looked up, the second is what it is being compared to
 def checkString(lookup_string, parsing_string):
-    if(len(parsing_string) != len(lookup_string)):
+    if(len(lookup_string) != len(parsing_string)):
         return False
 
     for i in range(len(lookup_string)):
@@ -62,38 +63,44 @@ try:
     #loop through the API, put the model name into the searchbar, and find the result we are looking for 
     counter = 0
     for element in flattened_values:
-        if(counter >= 6):
-            
-
+        if(counter >= 700):
             print(element.model)
             search_bar.send_keys(element.model)
-            wait = WebDriverWait(driver, 10)
-            search_results = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "table.processors tr")))
-            
+            sleep(5)
+
+
             #selects only items in the search table
-            #processor_table = driver.find_elements_by_css_selector("table.processors")
+            processor_table = driver.find_elements_by_css_selector("table.processors")
             #loops through the search results
-            for item in search_results:
-                tr_elements = item.find_elements_by_tag_name('tr')
+            for item in processor_table:
+                a_elements = item.find_elements_by_tag_name('a')
+                
                 #loops through everything after the first element to avoid the header row
-                for result in tr_elements[1:]:
+                for result in a_elements:
                     result_name = str(result.text)
-                    result_name = result_name.split(" ", 1)
-                    result_name = result_name[0].strip()
-                    if(result.text.strip()):
+                    result_name = result_name.replace(' ', '')
+                    
+                    
+                    if(result.text.strip()):   #DONT REMOVE. not sure why, but it produces a lot of blank results, so this line makes sure the thing we are looking at is not blank
                         print(f"looking up {element.model} showing {result.text}")
 
-                        if(checkString(element.model.strip(), result_name) == True):
+                        #we want to make sure the element we are looking at in the database actaully matches the one we are searching from the API. the following code makes sure of this
+                        if(checkString(element.model.replace(' ', ''), result_name) == True):
                             print("found match")
-                        else:
-                            print("fuck")
-                    # result_name = str(result.text)
-                    # result_name = result_name.split("/", 1)
-                    # result_name = result_name[0].strip()
-                    # if(result_name == element.model):
-                    #     print("hooray!")
-                    # else:
-                    #     print(f"booo! result name: {result_name}, element model: {element.model}")
+                            break
+                            #!where we will insert into sql
+                            #remember to ensure we are not inserting duplicates
+                        else:  #some results include the brand name in the core name, so we will try comparing again but with the brand name included
+                            #the APi stores all ryzen cpus under the "AMD", but the database has it stored as "Ryzen". this takes care of thaat discrepancy before we compare them
+                            if(element.brand == "AMD"):
+                                brand = "Ryzen"
+                            else:
+                                brand = element.brand
+                            if(checkString((brand + element.model).replace(' ', ''), result_name) == True):
+                                print("passed second try")
+                            else:
+                                print(f"fuck. arg 1: {(element.brand + element.model).replace(' ', '')}, arg 2: {result_name}")
+   
             search_bar.clear()
                     
 
@@ -101,7 +108,7 @@ try:
             sleep(1)
         counter += 1
     
-except:
+finally:
     # Quit the browser
     driver.quit()
 
