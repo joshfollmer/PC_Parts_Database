@@ -45,13 +45,12 @@ def insertIntoDB(cursor, api_cpu, db_cpu):
         boost_clock = int(words)
         boost_clock = round(boost_clock / 10**8) / 10  
     
-    try:
-        query = "INSERT INTO cpu (brand, model, tdp, socket_type, base_clock, boost_clock, cores, integrated_graphics, process, l3_cache, date_released, multithreading) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-        values = (api_cpu.brand, api_cpu.model, api_cpu.tdp, socket_type, base_clock, boost_clock, api_cpu.cores, api_cpu.integrated_graphics, process, l3_cache, date_released,  api_cpu.multithreading)
-        cursor.execute(query, values)
-        conn.commit()
-    except Error as e:
-        print(f"Error inserting data: {e}")
+    
+    query = "INSERT INTO cpu (brand, model, tdp, socket_type, base_clock, boost_clock, cores, integrated_graphics, process, l3_cache, date_released, multithreading) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+    values = (api_cpu.brand, api_cpu.model, api_cpu.tdp, socket_type, base_clock, boost_clock, api_cpu.cores, api_cpu.integrated_graphics, process, l3_cache, date_released,  api_cpu.multithreading)
+    cursor.execute(query, values)
+    conn.commit()
+    
     print(f"{api_cpu.model} inserted")
 
 
@@ -104,7 +103,7 @@ try:
     #loop through the API, put the model name into the searchbar, and find the result we are looking for 
     counter = 0
     for element in flattened_values:
-        if(counter >= 215):
+        if(counter >= 750):
             print(element.model)
             print(f"attributes: {element.base_clock}, {element.boost_clock}, {element.cores}, {element.integrated_graphics}, {element.multithreading}, {element.tdp}")
             if(checkIfExists(cursor, table_name, column_name, element.model) == False):
