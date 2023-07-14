@@ -5,6 +5,15 @@ from webdriver_manager.core.utils import ChromeType
 from selenium.webdriver.common.keys import Keys
 from time import sleep
 
+#target attributes: capacities, interface, random_iops, read_speed(sequential read), write_speed, endurance, dram, model, protocol, form_factor, controller(name)
+#nand_type, nand_capacity, nand_technology,
+def parseSsdPage(url, text):
+    driver.get(url)
+    sleep(3)
+    print(text)
+
+
+
 
 
 options = webdriver.ChromeOptions()
@@ -24,10 +33,31 @@ alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n'
 try:
     for i in range(len(alphabet)):
         for j in range(len(alphabet)):
+            #we need to reload the page and relocate the search bar each time because we will be loading new pages
+            driver.get('https://www.techpowerup.com/ssd-specs/')
+            search_bar = driver.find_element_by_css_selector(".js-search-input.search-input")
             search_bar.send_keys(f"{alphabet[i]}{alphabet[j]}")
             sleep(5)
+            ssd_table = driver.find_elements_by_css_selector(".drive-title")
+            link_attributes = []
+            for item in ssd_table:
+                a_elements = item.find_elements_by_tag_name('a')
+                for result in a_elements:
+                    if result.text.strip():
+                        href = result.get_attribute("href")
+                        text = result.text
+                        link_attributes.append({"href": href, "text": text})
 
 
+            for item in link_attributes:
+                print(item["text"])
+                #parseSsdPage(item["href"], item["text"])
+                        
+                     
+            
+           
+
+ 
             
 finally:
     driver.quit()
