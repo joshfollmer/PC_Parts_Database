@@ -1,4 +1,6 @@
-
+import mysql.connector
+from mysql.connector import connect, Error
+import configparser as cf
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.core.utils import ChromeType
@@ -16,14 +18,31 @@ def checkIfExists(cursor, table_name, column_name, value):
 
 
 def parseSsdPage(url, cursor):
+    #first we initialize the values in case they are not found on the page
+    overall_capacity = "Unknown"
+    nand_capacity = "Unknown"
+    nand_technology = "Unknown"
+    nand_type = "Unknown"
+    form_factor = "Unknown"
+    interface = "Unknown"
+    endurance = "Unknown"
+    dram = "Unknown"
+    model = "Unknown"
+    read_speed = "Unknown"
+    write_speed = "Unknown"
+    random_read = "Unknown"
+    random_write = "Unknown"
+    protocol = "Unknown"
+    controller = "Unknown"
+
     table_name = "ssd"
     column_name = "model"
-    value = "temp"
+    
     driver.get(url)
-    sleep(5)
+    sleep(10)
     sections = driver.find_elements_by_css_selector("section.details")
     model = driver.find_element_by_class_name("drivename").text
-    if(checkIfExists(cursor, table_name, column_name, value) == True):
+    if(checkIfExists(cursor, table_name, column_name, model) == True):
         print(f"{model} already in table")
         return
 
@@ -46,7 +65,7 @@ def parseSsdPage(url, cursor):
                 header = row.find_element_by_css_selector("th")
                 if(header.text == "Type:"):
                     nand_type = row.find_element_by_css_selector("td").text
-                elif(header.text == "Technology"):
+                elif(header.text == "Technology:"):
                     nand_technology = row.find_element_by_css_selector("td").text
                 elif(header.text == "Capacity:"):
                     nand_capacity = row.find_element_by_css_selector("td").text
@@ -90,12 +109,16 @@ def parseSsdPage(url, cursor):
                     write_speed = row.find_element_by_css_selector("td").text
                 elif(header.text == "Random Read:"):
                     random_read = row.find_element_by_css_selector("td").text
-                elif(header.text == "Random write:"):
+                elif(header.text == "Random Write:"):
                     random_write = row.find_element_by_css_selector("td").text
                 elif(header.text == "Endurance:"):
                     endurance = row.find_element_by_css_selector("td").text
 
-    
+    query = "INSERT INTO ssd (capacity, interface, read_speed, write_speed, endurance, dram, model, protocol, form_factor, controller, nand_type, nand_capacity, nand_technology, random_read, random_write)  VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+    values = (overall_capacity, interface, read_speed, write_speed, endurance, dram, model, protocol, form_factor, controller, nand_type, nand_capacity, nand_technology, random_read, random_write)
+    cursor.execute(query, values)
+    conn.commit()
+    print(f"{model} inserted into database")
 
 
 #target attributes: /capacity, /interface, /random_read, /random_write /read_speed(sequential read), /write_speed, 
@@ -114,9 +137,9 @@ driver.get('https://www.techpowerup.com/ssd-specs/')
 # find the search bar
 search_bar = driver.find_element_by_css_selector(".js-search-input.search-input")
 #!new approach: type two letters into search bar (aa, ab, ac, etc) and then visit each entry and insert based on info from page
-alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
-
+counter = 0
 try:
     config = cf.ConfigParser()
     config.read('config.ini')
@@ -131,34 +154,32 @@ try:
         database = db_name
     )
     cursor = conn.cursor()
-
+    table_name = "ssd"
+    column_name = "model"
+    value = "temp"
     for i in range(len(alphabet)):
         for j in range(len(alphabet)):
-            #we need to reload the page and relocate the search bar each time because we will be loading new pages
-            driver.get('https://www.techpowerup.com/ssd-specs/')
-            search_bar = driver.find_element_by_css_selector(".js-search-input.search-input")
-            search_bar.send_keys(f"{alphabet[i]}{alphabet[j]}")
-            sleep(5)
-            ssd_table = driver.find_elements_by_css_selector(".drive-title")
-            link_attributes = []
-            for item in ssd_table:
-                a_elements = item.find_elements_by_tag_name('a')
-                for result in a_elements:
-                    if result.text.strip():
-                        href = result.get_attribute("href")
-                        text = result.text
-                        link_attributes.append({"href": href, "text": text})
+            if(counter > 358):
+                #we need to reload the page and relocate the search bar each time because we will be loading new pages
+                driver.get('https://www.techpowerup.com/ssd-specs/')
+                search_bar = driver.find_element_by_css_selector(".js-search-input.search-input")
+                search_bar.send_keys(f"{alphabet[i]}{alphabet[j]}")
+                sleep(10)
+                ssd_table = driver.find_elements_by_css_selector(".drive-title")
+                link_attributes = []
+                for item in ssd_table:
+                    a_elements = item.find_elements_by_tag_name('a')
+                    for result in a_elements:
+                        if result.text.strip():
+                            href = result.get_attribute("href")
+                            text = result.text
+                            link_attributes.append({"href": href, "text": text})
 
-
-            for item in link_attributes:
-                
-                parseSsdPage(item["href"], cursor)
+                for item in link_attributes:
+                    parseSsdPage(item["href"], cursor)
+            counter += 1
+            print(f"counter is {counter}")
                         
-                     
-            
-           
-
- 
-            
+     
 finally:
     driver.quit()
