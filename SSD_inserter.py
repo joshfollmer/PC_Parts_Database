@@ -6,6 +6,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.core.utils import ChromeType
 from selenium.webdriver.common.keys import Keys
 from time import sleep
+from random import randint
 
 
 #function to check if an entry has already been inserted into the table
@@ -39,7 +40,7 @@ def parseSsdPage(url, cursor):
     column_name = "model"
     
     driver.get(url)
-    sleep(10)
+    sleep(randint(5, 10))
     sections = driver.find_elements_by_css_selector("section.details")
     model = driver.find_element_by_class_name("drivename").text
     if(checkIfExists(cursor, table_name, column_name, model) == True):
@@ -159,12 +160,12 @@ try:
     value = "temp"
     for i in range(len(alphabet)):
         for j in range(len(alphabet)):
-            if(counter > 358):
+            if(counter > 435):
                 #we need to reload the page and relocate the search bar each time because we will be loading new pages
                 driver.get('https://www.techpowerup.com/ssd-specs/')
                 search_bar = driver.find_element_by_css_selector(".js-search-input.search-input")
                 search_bar.send_keys(f"{alphabet[i]}{alphabet[j]}")
-                sleep(10)
+                sleep(5)
                 ssd_table = driver.find_elements_by_css_selector(".drive-title")
                 link_attributes = []
                 for item in ssd_table:
