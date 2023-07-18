@@ -160,7 +160,7 @@ try:
     value = "temp"
     for i in range(len(alphabet)):
         for j in range(len(alphabet)):
-            if(counter > 435):
+            if(counter > 439):
                 #we need to reload the page and relocate the search bar each time because we will be loading new pages
                 driver.get('https://www.techpowerup.com/ssd-specs/')
                 search_bar = driver.find_element_by_css_selector(".js-search-input.search-input")
