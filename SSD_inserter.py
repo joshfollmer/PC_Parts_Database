@@ -41,13 +41,15 @@ def parseSsdPage(url, cursor):
     
     driver.get(url)
     sleep(randint(5, 10))
+    #get all the information on the page into the sections variable
     sections = driver.find_elements_by_css_selector("section.details")
     model = driver.find_element_by_class_name("drivename").text
+    #check if this model is already in the sql table
     if(checkIfExists(cursor, table_name, column_name, model) == True):
         print(f"{model} already in table")
         return
 
-
+    #loop through the information and put all relevant specs into their variable
     for section in sections:
         h1_element = section.find_element_by_css_selector("h1")
         
@@ -114,7 +116,7 @@ def parseSsdPage(url, cursor):
                     random_write = row.find_element_by_css_selector("td").text
                 elif(header.text == "Endurance:"):
                     endurance = row.find_element_by_css_selector("td").text
-
+    #insert into the table
     query = "INSERT INTO ssd (capacity, interface, read_speed, write_speed, endurance, dram, model, protocol, form_factor, controller, nand_type, nand_capacity, nand_technology, random_read, random_write)  VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
     values = (overall_capacity, interface, read_speed, write_speed, endurance, dram, model, protocol, form_factor, controller, nand_type, nand_capacity, nand_technology, random_read, random_write)
     cursor.execute(query, values)
@@ -137,7 +139,7 @@ driver = webdriver.Chrome(ChromeDriverManager(chrome_type=ChromeType.BRAVE).inst
 driver.get('https://www.techpowerup.com/ssd-specs/')
 # find the search bar
 search_bar = driver.find_element_by_css_selector(".js-search-input.search-input")
-#!new approach: type two letters into search bar (aa, ab, ac, etc) and then visit each entry and insert based on info from page
+#the approach: type two letters into search bar (aa, ab, ac, etc) and then visit each entry and insert based on info from page
 alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
 counter = 0
