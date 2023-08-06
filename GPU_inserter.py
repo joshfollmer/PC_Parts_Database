@@ -15,9 +15,7 @@ def checkIfExists(cursor, table_name, column_name, value):
     count = result[0]
     return count > 0
 
-#target specs: brand, model, clock_speed, vram, bus_width, bandwidth, pcie, tdp, length, width, height,
-#shading_units, memory_type, th_pixel_rate, th_texture_rate, th_FP16, th_FP32, th_FP64, architecture, 
-#process size, release_date, transistors
+
 def parseGpuPage(url, cursor):
     driver.get(url)
     sleep(10)
@@ -51,6 +49,10 @@ def parseGpuPage(url, cursor):
     brand = name[0]
     model = name[1]
     
+    if(checkIfExists(cursor, table_name, column_name, model) == True):
+        print(f"{model} already in table")
+        return
+
     for section in sections:
         h2_element = section.find_element(By.CSS_SELECTOR, "h2")
 
@@ -101,12 +103,50 @@ def parseGpuPage(url, cursor):
             for row in rows:
                 header = row.find_element(By.CSS_SELECTOR, "dt")
                 if(header.text == "Length"):
+                    #length looks like "100 mm 2.4 inches" and i only want the "100 mm" part
                     length = row.find_element(By.CSS_SELECTOR, "dd").text
+                    length = length.split(" ")
+                    length = length[0] + " " + length[1]
+                elif(header.text == "Width"):
+                    width = row.find_element(By.CSS_SELECTOR, "dd").text
+                    width = length.split(" ")
+                    width = length[0] + " " + length[1]
+                elif(header.text == "Height"):
+                    height = row.find_element(By.CSS_SELECTOR, "dd").text
+                    height = length.split(" ")
+                    height = length[0] + " " + length[1]
+                elif(header.text == "TDP"):
+                    tdp = row.find_element(By.CSS_SELECTOR, "dd").text
+        elif(h2_element.text == "Clock Speeds"):
+            rows = section.find_elements(By.CLASS_NAME, "clearfix")
+            for row in rows:
+                header = row.find_element(By.CSS_SELECTOR, "dt")
+                if(header.text == "Base Clock"):
+                    clock_speed = row.find_element(By.CSS_SELECTOR, "dd").text
+        elif(h2_element.text == "Memory"):
+            rows = section.find_elements(By.CLASS_NAME, "clearfix")
+            for row in rows:
+                header = row.find_element(By.CSS_SELECTOR, "dt")
+                if(header.text == "Memory Size"):
+                    vram = row.find_element(By.CSS_SELECTOR, "dd").text
+                elif(header.text == "Memory Type"):
+                    memory_type = row.find_element(By.CSS_SELECTOR, "dd").text
+                elif(header.text == "Memroy Bus"):
+                    bus_width = row.find_element(By.CSS_SELECTOR, "dd").text
+                elif(header.text == "Bandwidth"):
+                    bandwidth = row.find_element(By.CSS_SELECTOR, "dd").text
+        elif(h2_element.text == "Mobile Graphics" or h2_element.text == "Integrated Graphics"):
+            print("Laptop GPU, skipping")
+            return
     
-    list = [brand, model, architecture, process_size, transistors, release_date, pcie, shading_units,
-            th_pixel_rate, th_texture_rate, th_FP16, th_FP32, th_FP64]
+  
 
-    print(length)
+    #insert into the table
+    query = "INSERT INTO gpu (brand, model, clock_speed, vram, bus_width, bandwidth, pcie, tdp, length, width, height, shading_units, memory_type, th_pixel_rate, th_texture_rate, th_FP16, th_FP32, th_FP64, architecture, process_size, release_date, transistors)VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+    values = (brand, model, clock_speed, vram, bus_width, bandwidth, pcie, tdp, length, width, height, shading_units, memory_type, th_pixel_rate, th_texture_rate, th_FP16, th_FP32, th_FP64, architecture, process_size, release_date, transistors)
+    cursor.execute(query, values)
+    conn.commit()
+    print(f"{brand} {model} inserted into database")
 
 
 
@@ -140,7 +180,7 @@ while(True):
         value = "temp"
         for i in range(len(alphabet)):
             for j in range(len(alphabet)):
-                if(counter > 3):
+                if(counter > 2):
                     #we need to reload the page and relocate the search bar each time because we will be loading new pages
                     driver.get('https://www.techpowerup.com/gpu-specs/')
                     search_bar = driver.find_element(By.NAME, "q")
@@ -165,10 +205,9 @@ while(True):
                 counter += 1
                 print(f"counter is {counter}")
 
-    #except:
-        # now = datetime.now()
-        # print(f"Error at {now.strftime('%H:%M:%S')}. Waiting for 20 minutes")
-        # sleep(1200) 
+    except:
+        now = datetime.now()
+        print(f"Error at {now.strftime('%H:%M:%S')}. Waiting for 20 minutes")
+        sleep(1200) 
                
-    finally:
-        driver.quit()    
+      
