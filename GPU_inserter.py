@@ -18,7 +18,7 @@ def checkIfExists(cursor, table_name, column_name, value):
 
 def parseGpuPage(url, cursor):
     driver.get(url)
-    sleep(10)
+    sleep(60)
 
     brand = "unknown"
     model = "unknown"
@@ -49,9 +49,12 @@ def parseGpuPage(url, cursor):
     brand = name[0]
     model = name[1]
     
-    if(checkIfExists(cursor, table_name, column_name, model) == True):
-        print(f"{model} already in table")
-        return
+    table_name = "gpu"
+    column_name = "model"
+
+    # if(checkIfExists(cursor, table_name, column_name, model) == True):
+    #     print(f"{model} already in table")
+    #     return
 
     for section in sections:
         h2_element = section.find_element(By.CSS_SELECTOR, "h2")
@@ -91,11 +94,11 @@ def parseGpuPage(url, cursor):
                     th_pixel_rate = row.find_element(By.CSS_SELECTOR, "dd").text
                 elif(header.text == "Texture Rate"):
                     th_texture_rate = row.find_element(By.CSS_SELECTOR, "dd").text
-                elif(header.text == "FP16(half)"):
+                elif(header.text == "FP16 (half)"):
                     th_FP16 = row.find_element(By.CSS_SELECTOR, "dd").text
-                elif(header.text == "FP32(float)"):
+                elif(header.text == "FP32 (float)"):
                     th_FP32 = row.find_element(By.CSS_SELECTOR, "dd").text
-                elif(header.text == "Fp64(double)"):
+                elif(header.text == "FP64 (double)"):
                     th_FP64 = row.find_element(By.CSS_SELECTOR, "dd").text
 
         elif(h2_element.text == "Board Design"):
@@ -131,7 +134,7 @@ def parseGpuPage(url, cursor):
                     vram = row.find_element(By.CSS_SELECTOR, "dd").text
                 elif(header.text == "Memory Type"):
                     memory_type = row.find_element(By.CSS_SELECTOR, "dd").text
-                elif(header.text == "Memroy Bus"):
+                elif(header.text == "Memory Bus"):
                     bus_width = row.find_element(By.CSS_SELECTOR, "dd").text
                 elif(header.text == "Bandwidth"):
                     bandwidth = row.find_element(By.CSS_SELECTOR, "dd").text
@@ -157,30 +160,30 @@ sleep(1)
 # find the search bar
 search_bar = driver.find_element(By.NAME, "q")
 #the approach: type two letters into search bar (aa, ab, ac, etc) and then visit each entry and insert based on info from page
-alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+config = cf.ConfigParser()
+config.read('config.ini')
+db_host = config.get('Database', 'HOST') 
+db_user = config.get('Database', 'USER')
+db_password = config.get('Database', 'PASSWORD')
+db_name = config.get('Database', 'DATABASE')
+conn = mysql.connector.connect(
+    host = db_host,
+    user = db_user,
+    password = db_password,
+    database = db_name
+)
+cursor = conn.cursor()
 
 counter = 0
+table_name = "gpu"
+column_name = "model"
 while(True):
-    try:
-        config = cf.ConfigParser()
-        config.read('config.ini')
-        db_host = config.get('Database', 'HOST') 
-        db_user = config.get('Database', 'USER')
-        db_password = config.get('Database', 'PASSWORD')
-        db_name = config.get('Database', 'DATABASE')
-        conn = mysql.connector.connect(
-            host = db_host,
-            user = db_user,
-            password = db_password,
-            database = db_name
-        )
-        cursor = conn.cursor()
-        table_name = "ssd"
-        column_name = "model"
-        value = "temp"
-        for i in range(len(alphabet)):
-            for j in range(len(alphabet)):
-                if(counter > 2):
+    
+    for i in range(len(alphabet)):
+        for j in range(len(alphabet)):
+            if(counter > 461):
+                try:
                     #we need to reload the page and relocate the search bar each time because we will be loading new pages
                     driver.get('https://www.techpowerup.com/gpu-specs/')
                     search_bar = driver.find_element(By.NAME, "q")
@@ -201,13 +204,15 @@ while(True):
                                 
 
                     for item in link_attributes:
-                        parseGpuPage(item["href"], cursor)
-                counter += 1
-                print(f"counter is {counter}")
+                        if(checkIfExists(cursor, table_name, column_name, item["text"]) == False):
+                            parseGpuPage(item["href"], cursor)
+                    counter += 1
+                
+                except:
+                    now = datetime.now()
+                    print(f"Error at {now.strftime('%H:%M:%S')}. Waiting for 20 minutes")
+                    sleep(1200) 
 
-    except:
-        now = datetime.now()
-        print(f"Error at {now.strftime('%H:%M:%S')}. Waiting for 20 minutes")
-        sleep(1200) 
-               
+            counter += 1
+            print(f"counter is {counter}")
       
