@@ -140,7 +140,7 @@ def parseGpuPage(url, cursor):
                     bandwidth = row.find_element(By.CSS_SELECTOR, "dd").text
         elif(h2_element.text == "Mobile Graphics" or h2_element.text == "Integrated Graphics"):
             print("Laptop GPU, skipping")
-            return
+            return 
     
   
 
@@ -150,6 +150,8 @@ def parseGpuPage(url, cursor):
     cursor.execute(query, values)
     conn.commit()
     print(f"{brand} {model} inserted into database")
+
+    
 
 
 
@@ -175,6 +177,7 @@ conn = mysql.connector.connect(
 )
 cursor = conn.cursor()
 
+laptop_gpus = {}
 counter = 0
 table_name = "gpu"
 column_name = "model"
@@ -182,7 +185,7 @@ while(True):
     
     for i in range(len(alphabet)):
         for j in range(len(alphabet)):
-            if(counter > 461):
+            if(counter > 2062):
                 try:
                     #we need to reload the page and relocate the search bar each time because we will be loading new pages
                     driver.get('https://www.techpowerup.com/gpu-specs/')
